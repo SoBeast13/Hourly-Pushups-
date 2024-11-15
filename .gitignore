@@ -1,18 +1,77 @@
-# Build and Release Folders
-bin-debug/
-bin-release/
-[Oo]bj/
-[Bb]in/
+package net.runelite.client.plugins.pushupreminder;
 
-# Other files and folders
-.settings/
+import com.google.inject.Provides;
+import net.runelite.api.Client;
+import net.runelite.api.events.GameTick;
+import net.runelite.client.config.ConfigManager;
+import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.plugins.Plugin;
+import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.overlay.OverlayManager;
+import javax.inject.Inject;
+import java.time.Duration;
+import java.time.Instant;
 
-# Executables
-*.swf
-*.air
-*.ipa
-*.apk
+@PluginDescriptor(
+    name = "Hourly Pushups",
+    description = "Reminds you every hour in-game to do 10 push-ups",
+    tags = {"fitness", "reminder", "health"},
+    enabledByDefault = false
+)
+public class PushUpReminderPlugin extends Plugin {
 
-# Project files, i.e. `.project`, `.actionScriptProperties` and `.flexProperties`
-# should NOT be excluded as they contain compiler settings and other important
-# information for Eclipse / Flash Builder.
+    @Inject
+    private Client client;
+
+    @Inject
+    private OverlayManager overlayManager;
+
+    private Instant lastReminder;
+
+    @Provides
+    PushUpReminderConfig provideConfig(ConfigManager configManager) {
+        return configManager.getConfig(PushUpReminderConfig.class);
+    }
+
+    @Override
+    protected void startUp() throws Exception {
+        lastReminder = Instant.now();
+        System.out.println("Hourly Pushups Plugin has started!");
+        client.addChatMessage(
+            net.runelite.api.ChatMessageType.GAMEMESSAGE,
+            "Hourly Pushups",
+            "Stay motivated! You got this! Remember: every rep counts.",
+            null
+        );
+    }
+
+    @Override
+    protected void shutDown() throws Exception {
+        System.out.println("Hourly Pushups Plugin has stopped!");
+        client.addChatMessage(
+            net.runelite.api.ChatMessageType.GAMEMESSAGE,
+            "Hourly Pushups",
+            "Hourly Pushups Plugin has been turned off. Great job staying active!",
+            null
+        );
+    }
+
+    @Subscribe
+    public void onGameTick(GameTick event) {
+        if (Duration.between(lastReminder, Instant.now()).toHours() >= 1) {
+            client.addChatMessage(
+                net.runelite.api.ChatMessageType.GAMEMESSAGE,
+                "Hourly Pushups",
+                "Time for a quick break! 10 push-ups to keep you strong and energized!",
+                null
+            );
+            client.addChatMessage(
+                net.runelite.api.ChatMessageType.GAMEMESSAGE,
+                "Hourly Pushups",
+                "You can do this! Take a deep breath and give it your best shot!",
+                null
+            );
+            lastReminder = Instant.now();
+        }
+    }
+}
